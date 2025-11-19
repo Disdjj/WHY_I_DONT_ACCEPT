@@ -62,7 +62,7 @@ export const generateRant = async (params: GenerateRantParams): Promise<string> 
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-pro',
+      model: 'gemini-2.5-falsh',
       contents: `Scene: ${params.scene}\nAction: ${params.action}`,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
