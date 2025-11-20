@@ -11,8 +11,9 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        'process.env.API_KEY': JSON.stringify(env.API_KEY),
+        'process.env.API_BASE': JSON.stringify(env.API_BASE),
+        'process.env.MODEL_NAME': JSON.stringify(env.MODEL_NAME || 'gpt-3.5-turbo'),
       },
       resolve: {
         alias: {

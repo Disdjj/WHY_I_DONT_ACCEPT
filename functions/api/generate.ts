@@ -1,4 +1,8 @@
-import { GenerateRantParams } from "../types";
+interface Env {
+  API_KEY: string;
+  API_BASE: string;
+  MODEL_NAME: string;
+}
 
 const SYSTEM_INSTRUCTION = `
 # Role
@@ -11,7 +15,7 @@ User Input: Scene (场景) + Action (行为).
 # Rules
 1. **BE CONCISE:** No long essays. It must look like a single breathless paragraph or a rapid-fire forum post.
 2. **HIGH DENSITY SLANG:** Use specific jargon (黑话) for that scene.
-3. **Structure:** 
+3. **Structure:**
    - **Shock:** Why did you directly [Action]?! (你为啥直接[行为]啊？！)
    - **The "Proper" Way:** You should have [Jargon A], then [Jargon B], and [Jargon C]! (你应该先……再……然后……！)
    - **Refusal:** I don't accept this! (我不接受！！)
@@ -52,29 +56,59 @@ User Input: Scene (场景) + Action (行为).
 你为啥直接就出金光啊？！米池里不是这样！你应该先让我歪个七七，然后让我肝大世界把原石攒够。偶尔给我来个十连全是三星武器，然后在那个保底水位快到80发的时候让我心跳加速。最后在某个我充了648痛哭流涕的夜晚，给我出个大保底，还要看我是不是定轨错了。你怎么直接上来单抽就出当期UP！？抽卡游戏里根本不是这样！我不接受！！
 `;
 
-export const generateRant = async (params: GenerateRantParams): Promise<string> => {
+export const onRequestPost: PagesFunction<Env> = async (context) => {
+  const { env, request } = context;
+
   try {
-    const response = await fetch('/api/generate', {
+    const { scene, action } = await request.json() as { scene: string; action: string };
+
+    if (!scene || !action) {
+      return new Response(JSON.stringify({ error: '缺少场景或行为参数' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const apiBase = env.API_BASE.replace(/\/$/, '');
+    const modelName = env.MODEL_NAME || 'gpt-3.5-turbo';
+
+    const response = await fetch(`${apiBase}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${env.API_KEY}`,
       },
       body: JSON.stringify({
-        scene: params.scene,
-        action: params.action,
+        model: modelName,
+        messages: [
+          { role: 'system', content: SYSTEM_INSTRUCTION },
+          { role: 'user', content: `场景: ${scene}\n行为: ${action}` }
+        ],
+        temperature: 1.2,
+        max_tokens: 500,
       }),
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.text();
       console.error("API Error:", error);
-      throw new Error(error.error || `API 请求失败: ${response.status}`);
+      return new Response(JSON.stringify({ error: `API 请求失败: ${response.status}` }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    const data = await response.json();
-    return data.rant || "ERROR: RAGE NOT FOUND (怒气值不足)";
+    const data = await response.json() as any;
+    const rant = data.choices?.[0]?.message?.content || "ERROR: RAGE NOT FOUND (怒气值不足)";
+
+    return new Response(JSON.stringify({ rant }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    console.error("API Error:", error);
-    throw new Error("系统过载。你的行为太离谱了，AI都气炸了。");
+    console.error("Error:", error);
+    return new Response(JSON.stringify({ error: '系统过载。你的行为太离谱了，AI都气炸了。' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 };

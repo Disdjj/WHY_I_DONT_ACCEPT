@@ -201,7 +201,7 @@ const App: React.FC = () => {
 
       <footer className="mt-auto pt-12 text-center z-10 font-bold">
         <p className="text-black text-sm bg-white inline-block px-2 border-2 border-black transform -rotate-1">
-          Powered by Gemini 2.5 Flash • 拒绝平庸，保持愤怒
+          拒绝平庸，保持愤怒
         </p>
       </footer>
     </div>
